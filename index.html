@@ -48,11 +48,11 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
 <header><h1>PHOTO TOOLS</h1><div style="color:var(--muted);font-size:12px">OFFLINE</div></header>
 
 <div class="tabs">
-  <button class="tab active" data-tab="astro">ASTRO</button>
-  <button class="tab" data-tab="focus">FOKUS</button>
+  <button class="tab active" data-tab="focus">FOKUS</button>
+  <button class="tab" data-tab="astro">ASTRO</button>
 </div>
 
-<section id="astro" class="panel">
+<section id="astro" class="panel hidden">
   <div class="card">
     <div class="section-title">Kamera & Aufnahme</div>
     <div class="grid2">
@@ -106,7 +106,7 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
   </div>
 </section>
 
-<section id="focus" class="panel hidden">
+<section id="focus" class="panel">
   <div class="card">
     <div class="section-title">Schärfentiefe</div>
     <div class="grid2">
@@ -136,7 +136,7 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
         <input id="focusDistance" type="number" value="3" min="0.1" step="0.1">
       </div>
     </div>
-    <button type="button" id="advancedToggle" style="width:100%;margin-top:12px;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px">Erweiterte Einstellungen</button>
+    <button type="button" id="advancedToggle" style="width:100%;margin-top:12px;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px">Erweiterte Einstellungen ▼</button>
     <div id="advancedBox" class="hidden" style="margin-top:12px">
       <label>Zerstreuungskreis (mm)</label>
       <input id="coc" type="number" value="0.03" step="0.001" min="0.005">
@@ -193,10 +193,15 @@ $("focusCamera").addEventListener("change",()=>{
  const d=camData[v] || camData.custom;
  $("coc").value=d.coc.toFixed(3);
  $("cocDisplay").value=d.label;
- if(v==="custom") $("advancedBox").classList.remove("hidden");
+ if(v==="custom"){
+   $("advancedBox").classList.remove("hidden");
+   $("advancedToggle").textContent="Erweiterte Einstellungen ▲";
+ }
 });
 $("advancedToggle").addEventListener("click",()=>{
- $("advancedBox").classList.toggle("hidden");
+ const box=$("advancedBox");
+ box.classList.toggle("hidden");
+ $("advancedToggle").textContent=box.classList.contains("hidden") ? "Erweiterte Einstellungen ▼" : "Erweiterte Einstellungen ▲";
 });
 $("resetCameraDefaults").addEventListener("click",()=>{
  const focusKey=$("focusCamera").value;
