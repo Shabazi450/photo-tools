@@ -132,8 +132,14 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
         <input id="focusAperture" type="number" value="8" min="0.7" step="0.1">
       </div>
       <div>
-        <label>Fokusentfernung (m)</label>
-        <input id="focusDistance" type="number" value="3" min="0.1" step="0.1">
+        <label>Fokusentfernung</label>
+        <div style="display:grid;grid-template-columns:1fr 88px;gap:8px">
+          <input id="focusDistance" type="number" value="3" min="0.001" step="0.1">
+          <select id="focusUnit" aria-label="Einheit Fokusentfernung">
+            <option value="m">m</option>
+            <option value="km">km</option>
+          </select>
+        </div>
       </div>
     </div>
     <button type="button" id="advancedToggle" style="width:100%;margin-top:12px;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px">Erweiterte Einstellungen ▼</button>
@@ -188,6 +194,18 @@ $("astroCamera").addEventListener("change",()=>{
  const d=camData[v] || camData.custom;
  $("astroPixel").value=d.pixel.toFixed(2);
 });
+let previousFocusUnit="m";
+$("focusUnit").addEventListener("change",()=>{
+ const newUnit=$("focusUnit").value;
+ let v=parseFloat($("focusDistance").value);
+ if(isFinite(v)){
+   if(previousFocusUnit==="m" && newUnit==="km") v/=1000;
+   if(previousFocusUnit==="km" && newUnit==="m") v*=1000;
+   $("focusDistance").value=Number(v.toFixed(6));
+ }
+ previousFocusUnit=newUnit;
+ calcFocus();
+});
 $("focusCamera").addEventListener("change",()=>{
  const v=$("focusCamera").value;
  const d=camData[v] || camData.custom;
@@ -224,7 +242,8 @@ function fmtDist(m){
  if(!isFinite(m)) return "∞";
  if(m<1) return Math.round(m*100)+" cm";
  if(m<10) return m.toFixed(2)+" m";
- return m.toFixed(1)+" m";
+ if(m<1000) return m.toFixed(1)+" m";
+ return (m/1000).toFixed(2)+" km";
 }
 function fmtDur(sec){
  sec=Math.max(0,sec);
@@ -256,7 +275,9 @@ function calcFocus(){
  const f=+$("focusFocal").value; // mm
  const N=+$("focusAperture").value;
  const c=+$("coc").value; // mm
- const sM=+$("focusDistance").value; // m
+ let sM=+$("focusDistance").value;
+ const unit=$("focusUnit").value;
+ if(unit==="km") sM*=1000;
  if(!(f>0&&N>0&&c>0&&sM>0)) return;
  const s=sM*1000;
  const H=(f*f)/(N*c)+f;
