@@ -61,6 +61,7 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
         <select id="astroCamera">
           <option value="z6">Nikon Z6</option>
           <option value="d750">Nikon D750</option>
+          <option value="a6400">Sony Alpha 6400</option>
           <option value="custom">Benutzerdefiniert</option>
         </select>
       </div>
@@ -72,7 +73,7 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
         <label>Blende</label>
         <input id="astroAperture" type="number" min="0.7" value="2.8" step="0.1">
       </div>
-      <div>
+      <div id="astroPixelWrap" class="hidden">
         <label>Pixelgröße (µm)</label>
         <input id="astroPixel" type="number" min="1" value="5.94" step="0.01">
       </div>
@@ -112,14 +113,15 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
       <div>
         <label>Kamera / Sensor</label>
         <select id="focusCamera">
-          <option value="ff">Vollformat (Z6 / D750)</option>
-          <option value="aps">APS-C / DX</option>
+          <option value="z6">Nikon Z6</option>
+          <option value="d750">Nikon D750</option>
+          <option value="a6400">Sony Alpha 6400</option>
           <option value="custom">Benutzerdefiniert</option>
         </select>
       </div>
       <div>
-        <label>Zerstreuungskreis (mm)</label>
-        <input id="coc" type="number" value="0.03" step="0.001" min="0.005">
+        <label>Schärfestandard</label>
+        <input id="cocDisplay" type="text" value="Vollformat · 0,030 mm" readonly>
       </div>
       <div>
         <label>Brennweite (mm)</label>
@@ -133,6 +135,13 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
         <label>Fokusentfernung (m)</label>
         <input id="focusDistance" type="number" value="3" min="0.1" step="0.1">
       </div>
+    </div>
+    <button type="button" id="advancedToggle" style="width:100%;margin-top:12px;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px">Erweiterte Einstellungen</button>
+    <div id="advancedBox" class="hidden" style="margin-top:12px">
+      <label>Zerstreuungskreis (mm)</label>
+      <input id="coc" type="number" value="0.03" step="0.001" min="0.005">
+      <button type="button" id="resetCameraDefaults" style="width:100%;margin-top:10px;background:transparent;color:var(--warm);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px">Kamerastandard wiederherstellen</button>
+      <div class="hint">Setzt nur Pixelgröße und Zerstreuungskreis zurück. Brennweite, Blende und Fokusentfernung bleiben unverändert.</div>
     </div>
     <button class="calc" id="focusCalc">Berechnen</button>
   </div>
@@ -155,7 +164,18 @@ button.calc{width:100%;border:0;border-radius:14px;padding:13px;background:var(-
 <script>
 (function(){
 const $=id=>document.getElementById(id);
-const camData={z6:{pixel:5.94,crop:1},d750:{pixel:5.95,crop:1}};
+const camData={
+ z6:{pixel:5.94,coc:0.030,label:"Vollformat · 0,030 mm"},
+ d750:{pixel:5.95,coc:0.030,label:"Vollformat · 0,030 mm"},
+ a6400:{pixel:3.92,coc:0.020,label:"APS-C · 0,020 mm"},
+ custom:{pixel:5.94,coc:0.030,label:"Benutzerdefiniert · Standard 0,030 mm"}
+};
+function applyCameraDefaults(key){
+ const d=camData[key] || camData.custom;
+ $("astroPixel").value=d.pixel.toFixed(2);
+ $("coc").value=d.coc.toFixed(3);
+ $("cocDisplay").value=d.label;
+}
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
  b.classList.add("active");
@@ -164,12 +184,30 @@ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
 }));
 $("astroCamera").addEventListener("change",()=>{
  const v=$("astroCamera").value;
- if(camData[v]) $("astroPixel").value=camData[v].pixel;
+ $("astroPixelWrap").classList.toggle("hidden",v!=="custom");
+ const d=camData[v] || camData.custom;
+ $("astroPixel").value=d.pixel.toFixed(2);
 });
 $("focusCamera").addEventListener("change",()=>{
  const v=$("focusCamera").value;
- if(v==="ff") $("coc").value="0.03";
- if(v==="aps") $("coc").value="0.02";
+ const d=camData[v] || camData.custom;
+ $("coc").value=d.coc.toFixed(3);
+ $("cocDisplay").value=d.label;
+ if(v==="custom") $("advancedBox").classList.remove("hidden");
+});
+$("advancedToggle").addEventListener("click",()=>{
+ $("advancedBox").classList.toggle("hidden");
+});
+$("resetCameraDefaults").addEventListener("click",()=>{
+ const focusKey=$("focusCamera").value;
+ const d=camData[focusKey] || camData.custom;
+ $("coc").value=d.coc.toFixed(3);
+ $("cocDisplay").value=d.label;
+ const astroKey=$("astroCamera").value;
+ const a=camData[astroKey] || camData.custom;
+ $("astroPixel").value=a.pixel.toFixed(2);
+ calcAstro();
+ calcFocus();
 });
 function fmtSec(s){
  if(!isFinite(s)) return "—";
